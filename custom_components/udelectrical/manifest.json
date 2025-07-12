@@ -1,0 +1,12 @@
+{
+  "domain": "udelectrical",
+  "name": "Udelectrical",
+  "version": "2025.7.12",
+  "codeowners": ["@upsideduck"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://www.home-assistant.io/integrations/udelectrical",
+  "iot_class": "cloud_polling",
+  "quality_scale": "bronze",
+  "requirements": []
+}

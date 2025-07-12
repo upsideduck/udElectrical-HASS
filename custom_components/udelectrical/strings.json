@@ -1,0 +1,28 @@
+{
+  "title": "UDElectrical integration",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up UDElectrical",
+        "description": "Enter your UDElectrical host and API key to connect.",
+        "data": {
+          "host": "Host",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to UDElectrical. Please check your host or API key.",
+      "invalid_auth": "Authentication failed. Please check your API key.",
+      "unknown": "An unknown error occurred. Please try again."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "UDElectrical options",
+        "description": "Adjust your UDElectrical integration settings."
+      }
+    }
+  }
+}
