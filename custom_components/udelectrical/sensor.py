@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
@@ -117,6 +120,82 @@ class UDElectricalSensor(
                     self._attr_native_value = last_state.state
 
         self.async_write_ha_state()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the state attributes."""
+        now = datetime.now()
+        attributes = {
+            "For": now.strftime("%B, %Y"),  # Full month name (e.g., "January")
+        }
+
+        # Add coordinator data timestamp if available
+        if self.coordinator.data and isinstance(self.coordinator.data, dict):
+            if "last_updated" in self.coordinator.data:
+                attributes["data_last_updated"] = self.coordinator.data["last_updated"]
+
+        # Add entity-specific attributes based on sensor type
+        if self.entity_description.key == "actual_price":
+            # For the saved sensor, include the calculation components
+            if (
+                self.coordinator.data
+                and isinstance(self.coordinator.data, dict)
+                and isinstance(self.coordinator.data.get("today"), dict)
+                and isinstance(self.coordinator.data.get("yesterday"), dict)
+            ):
+                yesterday_actual_price = self.coordinator.data.get("yesterday").get(
+                    "actual_price"
+                )
+                today_actual_price = self.coordinator.data.get("today").get(
+                    "actual_price"
+                )
+
+                if yesterday_actual_price is not None:
+                    attributes["yesterday"] = yesterday_actual_price
+                if today_actual_price is not None:
+                    attributes["today"] = today_actual_price
+
+        # Add entity-specific attributes based on sensor type
+        if self.entity_description.key == "unit_price":
+            # For the saved sensor, include the calculation components
+            if (
+                self.coordinator.data
+                and isinstance(self.coordinator.data, dict)
+                and isinstance(self.coordinator.data.get("today"), dict)
+                and isinstance(self.coordinator.data.get("yesterday"), dict)
+            ):
+                yesterday_unit_price = self.coordinator.data.get("yesterday").get(
+                    "unit_price"
+                )
+                today_unit_price = self.coordinator.data.get("today").get("unit_price")
+
+                if yesterday_unit_price is not None:
+                    attributes["yesterday"] = yesterday_unit_price
+                if today_unit_price is not None:
+                    attributes["today"] = today_unit_price
+
+        # Add entity-specific attributes based on sensor type
+        if self.entity_description.key == "consumption":
+            # For the saved sensor, include the calculation components
+            if (
+                self.coordinator.data
+                and isinstance(self.coordinator.data, dict)
+                and isinstance(self.coordinator.data.get("today"), dict)
+                and isinstance(self.coordinator.data.get("yesterday"), dict)
+            ):
+                yesterday_consumption = self.coordinator.data.get("yesterday").get(
+                    "consumption"
+                )
+                today_consumption = self.coordinator.data.get("today").get(
+                    "consumption"
+                )
+
+                if yesterday_consumption is not None:
+                    attributes["yesterday"] = yesterday_consumption
+                if today_consumption is not None:
+                    attributes["today"] = today_consumption
+
+        return attributes
 
     def _convert_to_float(self, value: str | float | None) -> float | None:
         """Convert a value to float, returning None if conversion fails."""
