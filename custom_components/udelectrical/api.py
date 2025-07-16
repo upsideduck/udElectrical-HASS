@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+_LOGGER = __import__("logging").getLogger(__name__)
+
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect to the UDElectrical API."""
@@ -33,11 +35,14 @@ class InvalidAuth(HomeAssistantError):
 class UdelectricalApi:
     """API client for udelectrical."""
 
-    def __init__(self, hass: HomeAssistant, host: str, api_key: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant, host: str, api_key: str, ssl: bool = True
+    ) -> None:
         """Initialize API client."""
         self._session = async_get_clientsession(hass)
         self._host = host
         self._api_key = api_key
+        self._ssl = ssl
         self._headers = {
             "X-API-Key": api_key,
             "Accept": "application/json",
@@ -49,13 +54,20 @@ class UdelectricalApi:
         """Make an API request."""
         try:
             async with asyncio.timeout(10):
+                protocol = "https" if self._ssl else "http"
                 response = await self._session.request(
                     method,
-                    f"https://{self._host}{url}",
+                    f"{protocol}://{self._host}{url}",
                     **kwargs,
                     headers=self._headers,
                 )
 
+                _LOGGER.debug(
+                    "udelectrical API response [%s] %s: %s",
+                    response.status,
+                    url,
+                    await response.text(),
+                )
                 if response.status == 401:
                     raise InvalidAuth("Invalid API key")
 

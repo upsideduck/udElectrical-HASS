@@ -7,7 +7,16 @@
         "description": "Enter your UDElectrical host and API key to connect.",
         "data": {
           "host": "Host",
-          "api_key": "API key"
+          "api_key": "API key",
+          "ssl": "Use SSL/HTTPS"
+        }
+      },
+      "reauth": {
+        "title": "Re-authenticate UDElectrical",
+        "description": "Enter your credentials to re-authenticate.",
+        "data": {
+          "api_key": "API key",
+          "ssl": "Use SSL/HTTPS"
         }
       }
     },

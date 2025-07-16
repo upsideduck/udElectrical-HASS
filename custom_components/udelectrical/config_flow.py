@@ -8,9 +8,10 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
 
 from .api import UdelectricalApi, CannotConnect, InvalidAuth
-from .const import DOMAIN
+from .const import DOMAIN, CONF_SSL
 
 CONF_API_KEY = "api_key"
+_LOGGER = __import__("logging").getLogger(__name__)
 
 
 class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -28,9 +29,15 @@ class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             host = user_input[CONF_HOST]
             api_key = user_input[CONF_API_KEY]
+            ssl = user_input.get(CONF_SSL, True)  # Default to True
             try:
-                api = UdelectricalApi(self.hass, host, api_key)
+                api = UdelectricalApi(self.hass, host, api_key, ssl)
+
+                _LOGGER.info(
+                    "Authenticating with UDElectrical API at %s (SSL: %s)", host, ssl
+                )
                 authenticated = await api.authenticate()
+
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except InvalidAuth:
@@ -43,7 +50,7 @@ class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self._abort_if_unique_id_configured()
                     return self.async_create_entry(
                         title=host,
-                        data={CONF_HOST: host, CONF_API_KEY: api_key},
+                        data={CONF_HOST: host, CONF_API_KEY: api_key, CONF_SSL: ssl},
                     )
 
         return self.async_show_form(
@@ -52,6 +59,7 @@ class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_HOST): str,
                     vol.Required(CONF_API_KEY): str,
+                    vol.Optional(CONF_SSL, default=True): bool,
                 }
             ),
             errors=errors,
@@ -65,8 +73,9 @@ class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         host = self.context.get("host") or self.context.get("unique_id")
         if user_input is not None and host:
             api_key = user_input[CONF_API_KEY]
+            ssl = user_input.get(CONF_SSL, True)  # Default to True
             try:
-                api = UdelectricalApi(self.hass, str(host), api_key)
+                api = UdelectricalApi(self.hass, str(host), api_key, ssl)
                 authenticated = await api.authenticate()
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -88,11 +97,16 @@ class UDElectricalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     if entry is not None:
                         return self.async_update_reload_and_abort(
                             entry,
-                            data_updates={CONF_API_KEY: api_key},
+                            data_updates={CONF_API_KEY: api_key, CONF_SSL: ssl},
                         )
                     errors["base"] = "unknown"
         return self.async_show_form(
             step_id="reauth",
-            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_API_KEY): str,
+                    vol.Optional(CONF_SSL, default=True): bool,
+                }
+            ),
             errors=errors,
         )
