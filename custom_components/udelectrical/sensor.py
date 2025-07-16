@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -22,28 +23,28 @@ SENSOR_DESCRIPTIONS = [
     SensorEntityDescription(
         key="unit_price",
         name="Average Units Price",
-        icon="mdi:flash",
+        icon="mdi:currency-usd",
         native_unit_of_measurement="SEK/kWh",
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
         key="actual_price",
         name="Average Actual Price",
-        icon="mdi:flash",
+        icon="mdi:cash",
         native_unit_of_measurement="SEK/kWh",
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
         key="consumption",
         name="Consumption",
-        icon="mdi:flash",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement="kWh",
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
         key="saved",
         name="Saved",
-        icon="mdi:cash-plus",
+        icon="mdi:piggy-bank",
         native_unit_of_measurement="SEK",
         suggested_display_precision=2,
     ),
@@ -89,10 +90,12 @@ class UDElectricalSensor(
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": entry.title,
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title,
+            manufacturer="UDElectrical",
+            model="Energy Monitor",
+        )
         self._restored_value = None
         self._attr_native_value = None
 
@@ -136,64 +139,69 @@ class UDElectricalSensor(
 
         # Add entity-specific attributes based on sensor type
         if self.entity_description.key == "actual_price":
-            # For the saved sensor, include the calculation components
+            # For the actual_price sensor, include today/yesterday values
             if (
                 self.coordinator.data
                 and isinstance(self.coordinator.data, dict)
                 and isinstance(self.coordinator.data.get("today"), dict)
                 and isinstance(self.coordinator.data.get("yesterday"), dict)
             ):
-                yesterday_actual_price = self.coordinator.data.get("yesterday").get(
-                    "actual_price"
-                )
-                today_actual_price = self.coordinator.data.get("today").get(
-                    "actual_price"
-                )
+                yesterday_data = self.coordinator.data.get("yesterday")
+                today_data = self.coordinator.data.get("today")
 
-                if yesterday_actual_price is not None:
-                    attributes["yesterday"] = yesterday_actual_price
-                if today_actual_price is not None:
-                    attributes["today"] = today_actual_price
+                if yesterday_data and isinstance(yesterday_data, dict):
+                    yesterday_actual_price = yesterday_data.get("actual_price")
+                    if yesterday_actual_price is not None:
+                        attributes["yesterday"] = yesterday_actual_price
+
+                if today_data and isinstance(today_data, dict):
+                    today_actual_price = today_data.get("actual_price")
+                    if today_actual_price is not None:
+                        attributes["today"] = today_actual_price
 
         # Add entity-specific attributes based on sensor type
         if self.entity_description.key == "unit_price":
-            # For the saved sensor, include the calculation components
+            # For the unit_price sensor, include today/yesterday values
             if (
                 self.coordinator.data
                 and isinstance(self.coordinator.data, dict)
                 and isinstance(self.coordinator.data.get("today"), dict)
                 and isinstance(self.coordinator.data.get("yesterday"), dict)
             ):
-                yesterday_unit_price = self.coordinator.data.get("yesterday").get(
-                    "unit_price"
-                )
-                today_unit_price = self.coordinator.data.get("today").get("unit_price")
+                yesterday_data = self.coordinator.data.get("yesterday")
+                today_data = self.coordinator.data.get("today")
 
-                if yesterday_unit_price is not None:
-                    attributes["yesterday"] = yesterday_unit_price
-                if today_unit_price is not None:
-                    attributes["today"] = today_unit_price
+                if yesterday_data and isinstance(yesterday_data, dict):
+                    yesterday_unit_price = yesterday_data.get("unit_price")
+                    if yesterday_unit_price is not None:
+                        attributes["yesterday"] = yesterday_unit_price
+
+                if today_data and isinstance(today_data, dict):
+                    today_unit_price = today_data.get("unit_price")
+                    if today_unit_price is not None:
+                        attributes["today"] = today_unit_price
 
         # Add entity-specific attributes based on sensor type
         if self.entity_description.key == "consumption":
-            # For the saved sensor, include the calculation components
+            # For the consumption sensor, include today/yesterday values
             if (
                 self.coordinator.data
                 and isinstance(self.coordinator.data, dict)
                 and isinstance(self.coordinator.data.get("today"), dict)
                 and isinstance(self.coordinator.data.get("yesterday"), dict)
             ):
-                yesterday_consumption = self.coordinator.data.get("yesterday").get(
-                    "consumption"
-                )
-                today_consumption = self.coordinator.data.get("today").get(
-                    "consumption"
-                )
+                yesterday_data = self.coordinator.data.get("yesterday")
+                today_data = self.coordinator.data.get("today")
 
-                if yesterday_consumption is not None:
-                    attributes["yesterday"] = yesterday_consumption
-                if today_consumption is not None:
-                    attributes["today"] = today_consumption
+                if yesterday_data and isinstance(yesterday_data, dict):
+                    yesterday_consumption = yesterday_data.get("consumption")
+                    if yesterday_consumption is not None:
+                        attributes["yesterday"] = yesterday_consumption
+
+                if today_data and isinstance(today_data, dict):
+                    today_consumption = today_data.get("consumption")
+                    if today_consumption is not None:
+                        attributes["today"] = today_consumption
 
         return attributes
 
